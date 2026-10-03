@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Dead by Daylight — Contador de Streak</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter:wght@400;600&display=swap');
+
+    :root {
+      --bg-card: rgba(18, 8, 10, 0.85);
+      --accent-blood: #ff2d3d;
+      --accent-deep: #c1121f;
+      --accent-gold: #ffc94d;
+      --text-main: #ffffff;
+      --text-muted: #a89a9e;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --font-display: 'Chakra Petch', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: transparent;
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      justify-content: flex-start;
+      align-items: flex-start;
+      padding: 10px;
+      min-height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .streak-card {
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-left: 5px dashed var(--accent-deep);
+      border-radius: 12px;
+      padding: 14px 20px;
+      width: 380px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      transition: all 0.3s ease;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      gap: 10px;
+    }
+
+    .card-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .best-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-display);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+      background: rgba(255, 201, 77, 0.14);
+      border: 1px solid rgba(255, 201, 77, 0.28);
+      color: var(--accent-gold);
+      letter-spacing: 1px;
+    }
+
+    .btn-header-action {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.2s ease-in-out;
+      pointer-events: none;
+    }
+
+    .btn-header-action:hover {
+      background: rgba(255, 255, 255, 0.25);
+      color: #fff;
+    }
+
+    .streak-card:hover .btn-header-action {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .streak-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .streak-display { position: relative; }
+
+    .streak-value {
+      position: relative;
+      font-family: var(--font-display);
+      font-size: 3.6rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #fff;
+      text-shadow: 0 0 16px rgba(255, 45, 61, 0.55), 0 3px 0 rgba(90, 4, 12, 0.9);
+      transition: color 0.3s ease;
+    }
+
+    .streak-value::after {
+      content: attr(data-value);
+      position: absolute;
+      inset: 0;
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: inherit;
+      line-height: inherit;
+      background: linear-gradient(100deg, transparent 35%, #fff8e0 50%, transparent 65%);
+      background-size: 250% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .streak-caption {
+      margin-top: 2px;
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .controls-panel {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+      max-height: 350px;
+      max-width: 380px;
+      opacity: 1;
+      overflow: hidden;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .row { display: flex; gap: 8px; align-items: center; }
+    label { font-size: 0.75rem; color: var(--text-muted); width: 60px; }
+
+    select, input {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+    }
+
+    select { flex: 1; cursor: pointer; }
+    select option { background: #1a0d0f; color: #fff; }
+
+    input.streak-input {
+      width: 64px;
+      text-align: center;
+      font-family: var(--font-display);
+    }
+
+    button {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+
+    button.btn-primary { background: var(--accent-deep); color: #fff; border: none; }
+    button.btn-danger { background: rgba(255, 45, 61, 0.2); color: #ff8a92; border: 1px solid rgba(255, 45, 61, 0.3); }
+    button.btn-gold { background: rgba(255, 201, 77, 0.2); color: var(--accent-gold); border: 1px solid rgba(255, 201, 77, 0.3); }
+
+    .shortcuts-hint { font-size: 0.65rem; color: var(--text-muted); text-align: center; opacity: 0.75; line-height: 1.5; }
+
+    .card-main { display: block; }
+
+    .streak-card.compact { width: auto; padding: 6px 10px; }
+
+    .streak-card.compact .card-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .streak-card.compact .card-header { display: contents; }
+
+    .streak-card.compact .card-title {
+      order: 1;
+      flex: 0 1 auto;
+      max-width: 120px;
+      font-size: 0.7rem;
+    }
+
+    .streak-card.compact .streak-row { order: 2; flex: 0 0 auto; }
+    .streak-card.compact .header-right { order: 3; }
+    .streak-card.compact .streak-caption { display: none; }
+    .streak-card.compact .streak-value { font-size: 2.4rem; }
+
+    .streak-card.compact .best-badge { order: 1; }
+    .streak-card.compact #toggleViewBtn { order: 2; }
+
+    .streak-card.compact .controls-panel {
+      max-height: 0;
+      max-width: 0;
+      padding: 0;
+      margin-top: 0;
+      border: none;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .modal-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(10, 4, 5, 0.92);
+      border-radius: 12px;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      gap: 12px;
+      z-index: 100;
+    }
+
+    .modal-overlay.active { display: flex; }
+    .modal-title { font-size: 0.85rem; font-weight: 600; color: var(--text-main); }
+    .modal-input { width: 100%; text-align: left; }
+    .modal-actions { display: flex; gap: 8px; width: 100%; }
+    .modal-actions button { flex: 1; }
+
+    .fx-layer {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 60;
+    }
+
+    .fx-vignette {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at center, rgba(193, 18, 31, 0) 30%, rgba(150, 8, 18, 0.85) 100%);
+      opacity: 0;
+    }
+
+    .death-banner,
+    .record-banner {
+      position: absolute;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-family: var(--font-display);
+      font-weight: 700;
+      opacity: 0;
+    }
+
+    .death-banner {
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.5rem;
+      letter-spacing: 4px;
+      color: var(--accent-blood);
+      text-shadow: 0 0 20px rgba(193, 18, 31, 0.95), 0 2px 0 #330106;
+    }
+
+    .record-banner {
+      top: 6px;
+      font-size: 0.8rem;
+      letter-spacing: 3px;
+      color: var(--accent-gold);
+      text-shadow: 0 0 16px rgba(255, 201, 77, 0.95);
+    }
+
+    .blood-drop {
+      position: absolute;
+      width: 6px;
+      height: 9px;
+      border-radius: 50% 50% 55% 55%;
+      background: radial-gradient(circle at 30% 28%, #ff6b74, #6e0a12);
+      animation: drop-fall 1.1s ease-in forwards;
+    }
+
+    .ember {
+      position: absolute;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fff6d5, #ff9d1c);
+      animation: ember-rise 1.4s ease-out forwards;
+    }
+
+    @keyframes drop-fall {
+      0% { transform: translateY(-12px) scale(0.5); opacity: 0; }
+      18% { opacity: 1; }
+      100% { transform: translateY(230px) scale(1.15); opacity: 0; }
+    }
+
+    @keyframes ember-rise {
+      0% { transform: translateY(10px) scale(1); opacity: 0; }
+      22% { opacity: 1; }
+      100% { transform: translateY(-150px) scale(0.2); opacity: 0; }
+    }
+
+    @keyframes shake-death {
+      0%, 100% { transform: translateX(0); }
+      15% { transform: translateX(-8px) rotate(-0.7deg); }
+      32% { transform: translateX(7px) rotate(0.7deg); }
+      50% { transform: translateX(-5px); }
+      68% { transform: translateX(4px); }
+      85% { transform: translateX(-2px); }
+    }
+
+    @keyframes vignette-flash {
+      0% { opacity: 0; }
+      10% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    @keyframes glitch-fall {
+      0% { transform: none; opacity: 1; filter: none; }
+      6% { transform: translateX(-4px); text-shadow: -3px 0 var(--accent-blood), 3px 0 #22e0ff; }
+      13% { transform: translateX(4px); text-shadow: 3px 0 var(--accent-blood), -3px 0 #22e0ff; }
+      20% { transform: translateX(-2px); }
+      28% { transform: translateX(0); text-shadow: 0 0 16px rgba(255, 45, 61, 0.55), 0 3px 0 rgba(90, 4, 12, 0.9); }
+      40% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); }
+      72% { transform: translateY(24px) scale(1.06); opacity: 0.7; filter: blur(2px); }
+      100% { transform: translateY(72px) scale(0.78) rotate(-7deg); opacity: 0; filter: blur(7px); }
+    }
+
+    @keyframes death-banner-in {
+      0% { opacity: 0; letter-spacing: 16px; filter: blur(9px); }
+      26% { opacity: 1; letter-spacing: 4px; filter: blur(0); }
+      72% { opacity: 1; letter-spacing: 4px; }
+      100% { opacity: 0; letter-spacing: 8px; }
+    }
+
+    @keyframes record-glow {
+      0%, 100% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); border-color: var(--border-color); }
+      30% { box-shadow: 0 0 0 1px rgba(255, 201, 77, 0.65), 0 0 46px rgba(255, 160, 0, 0.5); border-color: rgba(255, 201, 77, 0.7); }
+    }
+
+    @keyframes record-pulse {
+      0% { transform: scale(1); color: #fff; }
+      24% { transform: scale(1.26); color: #fff; text-shadow: 0 0 28px rgba(255, 201, 77, 0.95), 0 0 64px rgba(255, 160, 0, 0.6); }
+      46% { transform: scale(0.95); }
+      62% { transform: scale(1.07); }
+      100% { transform: scale(1); color: #fff; }
+    }
+
+    @keyframes shimmer-sweep {
+      0% { opacity: 0; background-position: 190% 0; }
+      15% { opacity: 1; }
+      70% { opacity: 1; }
+      100% { opacity: 0; background-position: -70% 0; }
+    }
+
+    @keyframes record-banner-in {
+      0% { opacity: 0; transform: translateY(-10px); letter-spacing: 10px; }
+      24% { opacity: 1; transform: translateY(0); letter-spacing: 3px; }
+      74% { opacity: 1; }
+      100% { opacity: 0; letter-spacing: 5px; }
+    }
+
+    @keyframes win-bump {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.14); text-shadow: 0 0 24px rgba(255, 45, 61, 0.9), 0 3px 0 rgba(90, 4, 12, 0.9); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shrink-pulse {
+      0% { transform: scale(1); opacity: 1; }
+      45% { transform: scale(0.88); opacity: 0.45; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .streak-card.fx-loss { animation: shake-death 0.9s ease-out; }
+    .streak-card.fx-loss .fx-vignette { animation: vignette-flash 1.2s ease-out; }
+    .streak-card.fx-loss .streak-value { animation: glitch-fall 1.15s cubic-bezier(0.4, 0, 0.7, 1) forwards; }
+    .streak-card.fx-loss .death-banner { animation: death-banner-in 1.3s ease-out; }
+
+    .streak-card.fx-record { animation: record-glow 1.6s ease-out; }
+    .streak-card.fx-record .streak-value { animation: record-pulse 1.4s cubic-bezier(0.2, 0.9, 0.25, 1); }
+    .streak-card.fx-record .streak-value::after { animation: shimmer-sweep 1.4s ease-out; }
+    .streak-card.fx-record .record-banner { animation: record-banner-in 1.6s ease-out; }
+
+    .streak-card.fx-win .streak-value { animation: win-bump 0.45s ease-out; }
+    .streak-card.fx-shrink .streak-value { animation: shrink-pulse 0.45s ease-out; }
+  </style>
+
+  <!-- SDKs do Firebase Compatíveis com Navegador -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+  <div class="streak-card compact" id="streakCard">
+    <div class="fx-layer" id="fxLayer">
+      <div class="fx-vignette"></div>
+      <div class="death-banner">VOCÊ MORREU</div>
+      <div class="record-banner">NOVO RECORDE</div>
+    </div>
+
+    <div class="modal-overlay" id="profileModal">
+      <div class="modal-title">Nome do personagem / modo:</div>
+      <input type="text" class="modal-input" id="modalProfileInput" placeholder="Ex: Trapper" autofocus>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="confirmNewProfile()">Salvar</button>
+        <button onclick="closeModal()">Cancelar</button>
+      </div>
+    </div>
+
+    <div class="card-main">
+      <div class="card-header">
+        <div class="card-title" id="displayProfileName">Padrão</div>
+        <div class="header-right">
+          <button class="btn-header-action" id="toggleViewBtn" onclick="toggleViewMode()" title="Config / Visualização">⚙️</button>
+          <div class="best-badge" title="Maior streak já alcançado">🏆 <span id="bestValue">0</span></div>
+        </div>
+      </div>
+
+      <div class="streak-row">
+        <div class="streak-display">
+          <div class="streak-value" id="streakValue" data-value="0">0</div>
+          <div class="streak-caption">Vitórias seguidas</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls-panel" id="controlsPanel">
+      <div class="row">
+        <label>Perfil:</label>
+        <select id="profileSelect" onchange="switchProfile(this.value)"></select>
+        <button onclick="openModal()">+ Novo</button>
+        <button class="btn-danger" onclick="deleteProfile()">Excluir</button>
+      </div>
+
+      <div class="row">
+        <label>Streak:</label>
+        <input type="number" class="streak-input" id="inputStreak" min="0" value="0">
+        <button class="btn-primary" onclick="applyManualStreak()">Setar</button>
+        <button onclick="resetStreak()">Zerar</button>
+      </div>
+
+      <div class="row">
+        <label>Recorde:</label>
+        <input type="number" class="streak-input" id="inputBest" min="0" value="0">
+        <button class="btn-gold" onclick="applyManualBest()">Setar</button>
+        <button class="btn-danger" onclick="clearBest()">Zerar Recorde</button>
+      </div>
+
+      <div class="row" style="justify-content: space-between; margin-top: 2px;">
+        <button class="btn-primary" style="flex: 1;" onclick="addWin()" title="Adicionar vitória">+1 Vitória</button>
+        <button onclick="decreaseStreak()" title="Diminuir streak">−1</button>
+        <button class="btn-danger" style="flex: 1;" onclick="loseStreak()" title="Zerar streak com animação de derrota">Perdeu</button>
+      </div>
+
+      <div class="shortcuts-hint">
+        <b>Atalhos:</b> [W] +1 Vitória | [S] −1 | [L] Perdeu | [R] Zerar<br>[C] Config / Visualização
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_xDYL3vVAQ8ZxurQll__-dWgx-X7Hf2U",
+      authDomain: "timer-live-a061e.firebaseapp.com",
+      databaseURL: "https://timer-live-a061e-default-rtdb.firebaseio.com",
+      projectId: "timer-live-a061e",
+      storageBucket: "timer-live-a061e.firebasestorage.app",
+      messagingSenderId: "536127458192",
+      appId: "1:536127458192:web:85462cfc4c43812038c115",
+      measurementId: "G-S6GLJ6W2V9"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database().ref('dbdStreakData');
+
+    let profiles = { "Padrão": { streak: 0, best: 0 } };
+    let currentProfile = "Padrão";
+    let isCompact = true;
+    let lastFxId = null;
+    let modalFocusTimer = null;
+
+    db.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      profiles = data.profiles || profiles;
+      currentProfile = data.currentProfile || Object.keys(profiles)[0];
+
+      const fx = data.fx;
+      if (fx && fx.id && fx.id !== lastFxId) {
+        lastFxId = fx.id;
+        if (Date.now() - fx.id < 5000) playFx(fx.type);
+      }
+
+      renderProfileSelect();
+      updateDisplay();
+    });
+
+    function syncToFirebase() {
+      db.set({
+        profiles: profiles,
+        currentProfile: currentProfile,
+        updatedAt: Date.now()
+      });
+    }
+
+    function fireFx(type) {
+      const id = Date.now() + Math.floor(Math.random() * 1000);
+      lastFxId = id;
+      playFx(type);
+      db.update({ fx: { type: type, id: id } });
+    }
+
+    function getProfile() {
+      if (!profiles[currentProfile]) profiles[currentProfile] = { streak: 0, best: 0 };
+      const p = profiles[currentProfile];
+      p.streak = Math.max(0, p.streak || 0);
+      p.best = Math.max(0, p.best || 0);
+      if (p.best < p.streak) p.best = p.streak;
+      return p;
+    }
+
+    function playFx(type) {
+      const card = document.getElementById('streakCard');
+      const classes = ['fx-loss', 'fx-record', 'fx-win', 'fx-shrink'];
+
+      for (const c of classes) card.classList.remove(c);
+      clearParticles();
+      void card.offsetWidth;
+
+      card.classList.add('fx-' + type);
+
+      if (type === 'loss') spawnParticles('blood-drop', 14, 120);
+      if (type === 'record') spawnParticles('ember', 14, 110);
+
+      setTimeout(() => {
+        card.classList.remove('fx-loss', 'fx-record', 'fx-win', 'fx-shrink');
+        clearParticles();
+      }, 1700);
+    }
+
+    function clearParticles() {
+      document.getElementById('fxLayer').querySelectorAll('.blood-drop, .ember').forEach(n => n.remove());
+    }
+
+    function spawnParticles(kind, count, spread) {
+      const layer = document.getElementById('fxLayer');
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('span');
+        p.className = kind;
+        p.style.left = (Math.random() * 100) + '%';
+        p.style.top = (Math.random() * spread) + 'px';
+        p.style.animationDelay = (Math.random() * 0.35) + 's';
+        p.style.animationDuration = (0.9 + Math.random() * 0.6) + 's';
+        layer.appendChild(p);
+        p.addEventListener('animationend', () => p.remove());
+      }
+    }
+
+    function addWin() {
+      const p = getProfile();
+      const brokeRecord = p.streak + 1 > p.best;
+      p.streak += 1;
+      if (brokeRecord) p.best = p.streak;
+      syncToFirebase();
+      fireFx(brokeRecord ? 'record' : 'win');
+    }
+
+    function decreaseStreak() {
+      const p = getProfile();
+      if (p.streak === 0) return;
+      p.streak -= 1;
+      syncToFirebase();
+      playFx('shrink');
+    }
+
+    function resetStreak() {
+      const p = getProfile();
+      if (p.streak === 0) return;
+      p.streak = 0;
+      syncToFirebase();
+      playFx('shrink');
+    }
+
+    function loseStreak() {
+      const p = getProfile();
+      p.streak = 0;
+      syncToFirebase();
+      fireFx('loss');
+    }
+
+    function applyManualStreak() {
+      const input = document.getElementById('inputStreak');
+      const val = parseInt(input.value);
+      input.blur();
+      if (isNaN(val) || val < 0) return;
+      const p = getProfile();
+      p.streak = val;
+      if (p.streak > p.best) p.best = p.streak;
+      syncToFirebase();
+    }
+
+    function applyManualBest() {
+      const input = document.getElementById('inputBest');
+      const val = parseInt(input.value);
+      input.blur();
+      if (isNaN(val) || val < 0) return;
+      const p = getProfile();
+      p.best = Math.max(val, p.streak);
+      syncToFirebase();
+    }
+
+    function clearBest() {
+      const p = getProfile();
+      p.best = p.streak;
+      syncToFirebase();
+    }
+
+    function updateDisplay() {
+      const p = getProfile();
+      const value = document.getElementById('streakValue');
+      value.textContent = p.streak;
+      value.setAttribute('data-value', p.streak);
+      document.getElementById('bestValue').textContent = p.best;
+      document.getElementById('displayProfileName').textContent = currentProfile;
+
+      const streakInput = document.getElementById('inputStreak');
+      const bestInput = document.getElementById('inputBest');
+      if (document.activeElement !== streakInput) streakInput.value = p.streak;
+      if (document.activeElement !== bestInput) bestInput.value = p.best;
+    }
+
+    function renderProfileSelect() {
+      const select = document.getElementById('profileSelect');
+      const names = Object.keys(profiles);
+      const current = Array.from(select.options).map(o => o.value).join(' ');
+
+      if (current !== names.join(' ')) {
+        select.innerHTML = '';
+        for (const name of names) {
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.textContent = name;
+          select.appendChild(opt);
+        }
+      }
+
+      select.value = currentProfile;
+    }
+
+    function switchProfile(newProfile) {
+      if (newProfile === currentProfile || !profiles[newProfile]) return;
+      currentProfile = newProfile;
+      document.getElementById('profileSelect').blur();
+      syncToFirebase();
+      updateDisplay();
+    }
+
+    function openModal() {
+      const input = document.getElementById('modalProfileInput');
+      input.value = '';
+      document.getElementById('profileModal').classList.add('active');
+      modalFocusTimer = setTimeout(() => input.focus(), 50);
+    }
+
+    function closeModal() {
+      document.getElementById('profileModal').classList.remove('active');
+      document.getElementById('modalProfileInput').blur();
+      if (modalFocusTimer) { clearTimeout(modalFocusTimer); modalFocusTimer = null; }
+    }
+
+    function confirmNewProfile() {
+      const name = document.getElementById('modalProfileInput').value.trim();
+      if (name && !profiles[name]) {
+        profiles[name] = { streak: 0, best: 0 };
+        currentProfile = name;
+        syncToFirebase();
+      }
+      closeModal();
+    }
+
+    function deleteProfile() {
+      if (Object.keys(profiles).length <= 1) return;
+      delete profiles[currentProfile];
+      currentProfile = Object.keys(profiles)[0];
+      syncToFirebase();
+    }
+
+    function toggleViewMode() {
+      isCompact = !isCompact;
+      const card = document.getElementById('streakCard');
+      const btn = document.getElementById('toggleViewBtn');
+      if (isCompact) {
+        card.classList.add('compact');
+        btn.textContent = '⚙️';
+      } else {
+        card.classList.remove('compact');
+        btn.textContent = '✕';
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('profileModal');
+      if (modal.classList.contains('active')) {
+        if (e.code === 'Enter') confirmNewProfile();
+        if (e.code === 'Escape') closeModal();
+        return;
+      }
+
+      if (['INPUT', 'SELECT'].includes(document.activeElement.tagName)) return;
+
+      if (e.code === 'KeyW') { e.preventDefault(); addWin(); }
+      else if (e.code === 'KeyS') { e.preventDefault(); decreaseStreak(); }
+      else if (e.code === 'KeyL') { e.preventDefault(); loseStreak(); }
+      else if (e.code === 'KeyR') { e.preventDefault(); resetStreak(); }
+      else if (e.code === 'KeyC') { e.preventDefault(); toggleViewMode(); }
+    });
+  </script>
+</body>
+</html>
